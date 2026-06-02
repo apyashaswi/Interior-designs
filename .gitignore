@@ -1,0 +1,10 @@
+# local build / share artifacts
+bedroom-suite-site.zip
+
+# dependencies (none today, but just in case)
+node_modules/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini

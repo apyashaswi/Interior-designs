@@ -1,0 +1,164 @@
+# Master Bedroom 3 — Interior Design Knowledge Base
+
+> Continuity doc for the master-suite interior design project. Read this first when resuming.
+> Last updated: 2026-06-01
+
+---
+
+## 1. Project at a glance
+
+- **What:** Interior design for **Bedroom 3 (the master suite)** on the **first floor** of the PWD renovation plan.
+- **Source plan:** `../PWD RENOVATION WORK PLAN.pdf` (ground + first floor CAD drawing). The first-floor master suite is the subject.
+- **Deliverable so far:** a browser-based **3D walkthrough + 2D floor plan** built with Three.js (`index.html`), served locally by `server.js`.
+
+### Design brief (confirmed with the owner)
+| Topic | Decision |
+|---|---|
+| **Style** | Modern Minimalist |
+| **Budget** | Premium (custom joinery, quality materials) |
+| **Priorities** | King bed + seating · maximize storage · window seat with flanking cupboards |
+| **No-go** | Clutter; the single lounge sofa was explicitly **removed** |
+
+---
+
+## 2. How to run the 3D model
+
+```bash
+cd "3d-design"
+node server.js
+# open http://localhost:5173
+```
+- Zero npm dependencies (uses Three.js via CDN). Node 18+ (tested on v24).
+- **Controls:** `3D View / 2D Floor Plan` toggle (top center) · **Day/Night** · **X-ray walls** · **Show/Hide ceiling** · **Top-down** · **Reset** · **Auto-spin** · mouse drag/scroll/right-drag.
+
+### Files
+- `index.html` — the whole app (Three.js scene **and** the SVG 2D plan). All geometry is plain JS coordinates.
+- `server.js` — minimal zero-dependency static server.
+- `package.json` — `npm start` runs the server.
+- `KNOWLEDGE-BASE.md` — this file.
+
+---
+
+## 3. Coordinate system (READ before editing `index.html`)
+
+- **1 unit = 1 foot.**
+- **X** = width: `0` = left/west wall … `16.5` = right/east **window wall** (room is **16'6"** wide — see decision log #10).
+- **Z** = depth: `0` = north/top (closet+bath end) … `31.75` = south (balcony end).
+- **Y** = height: `0` = floor … `10` = structural slab; **8.5** = finished (false) ceiling.
+- Helpers: `box(w,h,d, centerX,centerY,centerZ, mat)` is **center-based**; `boxAt(w,h,d, minX,minY,minZ, mat)` is **min-corner based**.
+- Key constants (top of the script):
+  `W=16.5`, `BC=W/2` (bath|closet divider = 8.25), `ZTOT=31.75`, `H=10`, `FC=8.5`, `Z_STRIP=8`, `Z_BED=24`, `BALC={ax:16.0,az:28.5,bx:10.75,bz:31.75}`.
+
+---
+
+## 4. Current layout (the source of truth)
+
+```
+            NORTH (z=0)  — exterior
+ x0                  x8.25                  x16.5
+  ┌─────────────────────┬─────────────────────┐  z0
+  │     BATH 8'3"×8'     │ WALK-IN CLOSET 8'3"×8'│
+  │  (vanity,WC,         │  (island, wardrobes)  │  ← strip 8 ft deep
+  │   shower NE x5.25-8.25)  ┌── 2ft window (E wall, z3-5)
+  │                ║     │  door→closet on WEST  │
+  └───────door═════╝─────┴──(x8.75-11.25)───────┘  z8
+  │        bath reached THROUGH closet           │
+  │                                              │
+  │   KING BED (headboard on LEFT wall, x0)      │  ┌ WINDOW SEAT (E wall)
+  │   faces the big east window  ────────────────┼─►│ 12 ft, z8-20
+  │                                              │  │ + 10ft window z10-20
+  │   [ ~8 ft open floor toward window ]         │  └ L-WARDROBE z20-24
+  │                                              │     + Leg B return x13-16.5
+  │  entry door (left wall, z19.5-22) ───────────┤
+  └───────── convertible glass door ────────────┘  z24
+  │  3.0 solid │ 10 ft bi-fold door │ 3.5 (legB) │
+  │           SIT-OUT / BALCONY ≈16'6"×7'9"       │  angled outer corner
+  └──────────────────────────────────────────────┘  z31.75
+            SOUTH — balcony / sit-out
+```
+
+### Dimensions
+- **Bedroom:** **16'6"** (X) × 16'0" (Z, z8–24). Ceiling 10 ft with **1.5 ft false-ceiling cove** (finished 8.5 ft).
+- **Bath:** ~8'3"×8' (x0–8.25, z0–8). Reached **through the closet** (no direct bedroom→bath door). Shower in NE corner (x5.25–8.25, z0–3.2).
+- **Walk-in closet:** ~8'3"×8' (x8.25–16.5, z0–8), against the **east exterior wall**.
+- **Balcony / sit-out:** ≈16'6"×7'9" (z24–31.75) with an **angled outer corner**.
+- **No alcove** — the bath (8'3") + closet (8'3") split the full 16'6" width evenly; the old 3 ft alcove was only an artifact of the earlier 19 ft assumption.
+
+### Openings
+| Opening | Location | Size |
+|---|---|---|
+| Bedroom **entry door** | left wall (x=0), z 19.5–22 (near balcony) | ~2.5 ft |
+| **Closet door** (from bedroom) | closet south wall, x 8.75–11.25 (**west side, away from E window**) | ~2.5 ft |
+| **Closet→bath door** | partition x=8.25 (=BC), z 4–6 | ~2 ft |
+| **Large Window #1** (bedroom) | east wall (x=16.5), z 10–20 | **10 ft**, window seat under |
+| **Closet window** | east wall (x=16.5), z 3–5 | **2 ft**, 3 ft wall each side |
+| **Large Window #2 / convertible bi-fold door** | balcony wall (z=24), x 3–13 | **10 ft** |
+
+### Window / balcony wall splits (owner-specified)
+- **East window wall (16 ft, along Z):** 2 ft cushion + **10 ft window** + 4 ft … resolved as 12 ft window-seat (z8–20) + 4 ft wardrobe (z20–24).
+- **Balcony wall (16'6" along X):** **3.0 ft solid + 10 ft door + 3.5 ft Leg B** (was 5.5+10+3.5 at 19 ft; the 10 ft door and 3.5 ft Leg B were kept, the west solid trimmed to absorb the 2.5 ft).
+
+---
+
+## 5. Joinery & furniture (the feature pieces)
+
+- **King bed** — headboard against the **left wall** (opposite the window); faces the big east window. `bedZc=13.5`, 6.5 wide × 6.6 long. (~8 ft of open floor now sits between the bed foot and the window seat, down from ~12 ft at the old 19 ft width.) Fluted upholstered headboard, 2 floating bedside tables + **brass pendant** lights, foot bench, rug, artwork.
+- **Window seat** — **continuous 12 ft** along the east wall (z8–20), 1.83 ft deep, with a **daybed end** (backrest + bolster) at the north end where it meets solid wall. The 10 ft window sits above (z10–20).
+- **L-shaped wardrobe** (balcony end of the east wall):
+  - **Leg A** = 4 ft full-height along the east wall (z20–24).
+  - **Leg B** = 3.5 ft return wrapping the corner onto the balcony-wall stub (x13–16.5). Handleless oak.
+- **Closet** — north-wall wardrobe (x8.55–16.2), two east-wall wardrobes flanking the 2 ft window, central island (x10.9) with stone top.
+- **Bath** — vanity (x0.3, north wall), WC (x1.0), glass shower enclosure in the **NE corner** (x5.25–8.25, z0–3.2).
+- **Balcony** — 2 outdoor lounge chairs, coffee table, planter, glass railing following the angled corner.
+
+---
+
+## 6. Material & finish palette (Modern Minimalist · premium)
+
+| Surface | Material | Hex (in code) |
+|---|---|---|
+| Walls | Warm white / greige | `0xefe9df` |
+| Floor | Wide-plank engineered oak | `0xc9a16b` |
+| Joinery (seat, wardrobes) | Oak veneer, **handleless** | `0xc69a6b` / dark `0x9c6f43` |
+| Upholstery | Oat linen | `0xd8cdbb` |
+| Accent textile | Charcoal | `0x33312f` |
+| Bath | Stone + glass | `0xd7d2c8` / glass |
+| Metal accents | Brushed brass | `0xb08d57` |
+| Balcony | Timber deck | `0xb5a382` |
+
+Lighting is **layered**: recessed downlights + perimeter **cove LED** (the 1.5 ft drop) + bedside **pendants** + room lights. Toggle **Night** to see the cove glow.
+
+---
+
+## 7. Decision log (why things are the way they are)
+
+1. Started as a single 16'3"×16'0" room; expanded to model the **whole suite** (closet + bath + balcony).
+2. Window seat + flanking cupboards placed on an **exterior** wall (the east wall).
+3. Bed **rotated 90°** so the headboard is on the **left wall** (opposite the window) — wake facing the window/balcony light.
+4. The uneven window-wall sides were unified, then evolved into **extended 12 ft seat (daybed) + corner L-wardrobe**.
+5. **Single lounge sofa removed** at owner's request.
+6. Convertible balcony door **narrowed to 10 ft** to make room for the L-wardrobe's Leg B (glazing stays clear of joinery).
+7. Room **width set to 19 ft** (balcony wall = 5.5 + 10 + 3.5). *(superseded — see #10)*
+8. Closet & bath confirmed **8×8 each** → strip depth deepened from 6.5 to **8 ft**; bedroom/balcony shifted accordingly.
+9. **Closet window on the east wall** (its 8 ft side: 3 + 2 + 3); **closet door kept on the west side**, away from that window.
+10. **Width corrected to 16'6" (2026-06-01).** Owner confirmed the original plan shows the room as **16'6" wide, not 19 ft**, and that there is **no alcove/passage**. The bath + closet now **split the 16'6" evenly (~8'3" each)** and fill the whole strip. Forced consequences: east wall moved to x=16.5 (window seat, windows, L-wardrobe shifted in); bath/closet repositioned (bath x0–8.25, closet x8.25–16.5; partition now x=8.25=BC); balcony wall re-split to **3.0 solid + 10 ft door + 3.5 Leg B** (door & Leg B preserved). Depth unchanged (16'0").
+
+---
+
+## 8. OPEN QUESTIONS — resume here next time
+
+1. ~~The ~3 ft alcove~~ — **RESOLVED 2026-06-01:** there is no alcove; the room is 16'6" wide and bath+closet fill it (decision log #10).
+2. **Confirm the closet window** is centered on the east wall exactly as the real plan shows. Also re-confirm the **west solid (3.0 ft) on the balcony wall** is acceptable, or whether the 10 ft door should shrink instead.
+3. **The ~8 ft open floor** between the bed foot and the window seat — fill it (bench, pair of accent chairs facing the window, console) or keep it open and airy?
+4. **Refinements offered but not yet built:** daybed book ledge · chamfer the inner corner of the L-wardrobe · wardrobe interior shelf/rail detail · **animated** bi-fold door (open/close button) · sheer + blackout **curtain layers** · load **real wood/stone textures** instead of flat colors.
+5. **Not yet designed:** bath interior styling, closet interior organization detail, balcony flooring/planting, exact electrical/switching plan.
+
+---
+
+## 9. Editing tips
+
+- Change a room size → update the relevant constant(s) and the hard-coded coordinates that reference the **east wall** / partitions. After any width/depth change, also update the matching values in the **`build2D()`** function (the SVG plan is drawn from the same numbers but is **not** auto-linked).
+- The exterior walls use a single shared material `WALL`; **X-ray** toggles its opacity.
+- Ceilings live in `ceilingGroup` (hidden by default); the cove glow is in `coveGroup`.
+- Always re-test both the **3D view** and the **2D plan** after edits (the door swings, window glyphs, and dimension lines are drawn separately in `build2D()`).
+- **Glazing (added 2026-06-01):** the **east wall now has REAL openings cut** for the two windows — it is built as solid segments + sills/headers (`box(...,WALL)`), no longer one box. Each opening has a bright **sky light-box** (`skyPanel(...)`, a `MeshBasicMaterial` gradient plane) tucked just outside at `x=W+0.2`, sized to the opening so it's only seen *through* the glass, not as a floating billboard. Windows + balcony door use `winGlass` (lighter, glassy) instead of `glassMat` (which is kept for the shower + railings). `setMode()` dims `skyMat` to dusk-blue at night. If you resize/move a window, also move its sky panel and re-cut the wall segments.
