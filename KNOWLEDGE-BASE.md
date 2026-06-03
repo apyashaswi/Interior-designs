@@ -36,6 +36,11 @@ node server.js
 - **Realistic reflections (added 2026-06-02):** `scene.environment` is a `RoomEnvironment` baked through `PMREMGenerator` — gives glass, brass, and the closet **mirror** real image-based reflections and softer material lighting. If day mode looks too bright, lower `renderer.toneMappingExposure` or the env sigma.
 - **Focus room / zone isolation (added 2026-06-02):** geometry is split into `THREE.Group`s — `gShell` (walls/floors), `gBed`, `gCloset`, `gBath`, `gBalc` — via a module-level `TARGET` that `box()`/`boxAt()` add to (set per build section). `setFocus(z)` toggles group visibility, ghosts the shell walls to 8% opacity when isolating one room (so you can orbit freely), and snaps the camera to a per-zone preset in `FOCUS`. Balcony shows with the bedroom. **When you add geometry, set `TARGET` to the right group first**, or route stray `scene.add(...)` meshes to the group like the bed lamps / balcony pieces do.
 
+### Hosting (added 2026-06-02)
+- **Live site:** https://apyashaswi.github.io/Interior-designs/ — GitHub Pages, served from `main` branch root.
+- **Repo:** https://github.com/apyashaswi/Interior-designs (public). Push to `main` and Pages rebuilds automatically (~1 min).
+- It's a pure static site (CDN Three.js), so Pages serves `index.html` directly — `server.js` is local-dev only and unused in production.
+
 ### Files
 - `index.html` — the whole app (Three.js scene **and** the SVG 2D plan). All geometry is plain JS coordinates.
 - `server.js` — minimal zero-dependency static server.
