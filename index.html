@@ -157,6 +157,8 @@ const skyTex = (()=>{ const c=document.createElement('canvas'); c.width=4; c.hei
 const skyMat = new THREE.MeshBasicMaterial({ map:skyTex, side:THREE.DoubleSide });
 function skyPanel(w,h,x,y,z,ry=0){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h), skyMat); m.position.set(x,y,z); m.rotation.y=ry; m.castShadow=false; m.receiveShadow=false; scene.add(m); return m; }
 const stone= std(C.stone,{r:0.55}); stone.map=stoneTex('#d7d2c8',[2,2]); stone.color.set(0xffffff);
+const ledMat = new THREE.MeshStandardMaterial({color:0xfff0d8, emissive:0xffdca0, emissiveIntensity:1, roughness:1});   // joinery / strip LED
+const sheer  = new THREE.MeshStandardMaterial({color:0xf2ece0, roughness:1, transparent:true, opacity:0.32, side:THREE.DoubleSide});  // curtain sheer
 const walls=[];
 function wall(x0,z0,x1,z1,h=FC,t=0.35){ const cx=(x0+x1)/2, cz=(z0+z1)/2, w=Math.abs(x1-x0)||t, d=Math.abs(z1-z0)||t; const m=box(w,h,d,cx,h/2,cz,WALL); walls.push(m); return m; }
 
@@ -263,6 +265,11 @@ box(1.6,0.25,bedW-0.2, bedX0+bedL-1.2,1.35,bedZc, std(C.charcoal,{r:1}));
 boxAt(1.3,1.4,5.0, bedX0+bedL+0.2,0,bedZc-2.5, linen);                 // foot bench
 box(8.5,0.04,9.5, 4.5,0.09,bedZc, std(C.rug,{r:1}),{cast:false});      // rug
 box(0.08,2,3.2, 0.12,6.7,bedZc, std(0xbcae97,{r:1}));                  // artwork on headboard wall
+// sheer curtain over the big east window (rod + panel) + a floor plant in the corner
+box(0.06,0.06,10.6, W-0.45,7.55,15, brass,{cast:false});              // curtain rod
+boxAt(0.05,6.0,10.0, W-0.5,1.5,10.0, sheer,{cast:false,recv:false});  // sheer panel (z10..20, sits on seat)
+box(1.0,1.0,1.0, 1.3,0.5,22.2, std(0x8a7d6b,{r:1}));                  // planter pot
+{ const fo=new THREE.Mesh(new THREE.IcosahedronGeometry(1.15,1), std(C.green,{r:1})); fo.position.set(1.3,2.1,22.2); fo.castShadow=true; gBed.add(fo); }
 
 // ---- FEATURE WALL (E, x=W): 10 ft window + 12 ft seat + corner L-WARDROBE ----
 const cupD=1.83, segX0=W-cupD;
@@ -300,6 +307,16 @@ box(0.7,1.1,0.25, 1.0,1.4,7.3, std(0xffffff,{r:0.3}));        // WC cistern
 box(3.0,0.05,3.2, 6.75,0.06,1.6, std(C.tile,{r:0.4}),{cast:false});
 box(0.06,7.0,3.2, 5.25,3.5,1.6, glassMat,{cast:false,recv:false});
 box(3.0,7.0,0.06, 6.75,3.5,3.2, glassMat,{cast:false,recv:false});
+// ---- bath fittings: tiled splash, mirror, tap, towel, rain shower ----
+const bMir=std(0xccd8de,{m:0.95,r:0.05,envMapIntensity:1.4});
+boxAt(3.6,1.6,0.04, 0.2,2.6,0.06, stone);                        // tiled splash behind vanity
+box(2.4,2.2,0.05, 2.0,4.0,0.08, bMir,{cast:false});              // vanity mirror
+box(0.07,0.45,0.07, 1.6,2.85,0.5, brass,{cast:false});           // tap
+box(0.4,0.06,0.16, 1.6,3.02,0.62, brass,{cast:false});           // tap spout
+box(0.6,0.05,0.05, 3.9,2.6,0.15, brass,{cast:false});            // towel bar (north wall)
+boxAt(0.5,1.1,0.06, 3.65,1.4,0.16, std(0xece4d6,{r:1}));         // towel
+box(0.8,0.06,0.06, 7.85,6.4,1.6, brass,{cast:false});            // shower arm
+box(0.5,0.08,0.5, 7.4,6.3,1.6, brass,{cast:false});              // rain head
 const bl=new THREE.PointLight(0xfff0d8,0,9,2); bl.position.set(3.5,6.5,2); bl.name='roomLight'; scene.add(bl);
 
 // ===========================================================================
@@ -314,10 +331,23 @@ boxAt(0.16,0.12,2.2, W-0.16,6.5,2.9, brass,{cast:false});
 // --- WARDROBES (full-height to FC, handleless oak) lining every wall ---
 const WD=2.0, ED=1.5, SD=1.6;                              // run depths (north/west, east, south)
 boxAt(8.0, FC, WD,   8.4,     0, 0.05,       oak);         // NORTH wall run  (x8.4..16.4)
-boxAt(ED,  FC, 2.8,  W-ED,    0, 5.05,       oak);         // EAST wall, S of window (z5..7.85)
+// EAST wall, S of window — OPEN display wardrobe (rail + garments + shelves + drawers + LED)
+(function(){ const x0=W-ED, z0=5.05, wz=2.8, gC=[0x6b6f5a,0x8a8175,0x3f4a55,0xb9a98c,0x9c6f43,0x55606b];
+  boxAt(0.10,FC,wz, W-0.10,0,z0, oak);                                       // back panel (against E wall)
+  boxAt(ED,FC,0.06, x0,0,z0, oak); boxAt(ED,FC,0.06, x0,0,z0+wz-0.06, oak);  // side panels
+  boxAt(ED,0.08,wz, x0,FC-0.08,z0, oak);                                     // top
+  boxAt(ED,0.55,wz, x0,0,z0, oakV);                                          // drawer bank (bottom)
+  boxAt(0.05,0.05,1.25, x0+0.45,6.55,z0+0.1, brass,{cast:false});            // hanging rail (left bay)
+  for(let k=0;k<6;k++) boxAt(0.55,2.35,0.14, x0+0.12,4.2,z0+0.18+k*0.2, std(gC[k],{r:1}));   // garments
+  for(let s=0;s<3;s++){ const y=4.7+s*1.0; boxAt(ED-0.1,0.05,1.2, x0+0.05,y,z0+1.55, oak);   // shelves (right bay)
+    boxAt(0.7,0.35,0.5, x0+0.35,y+0.05,z0+1.7, std(gC[(s+2)%6],{r:1})); }                     // folded stacks
+  boxAt(ED-0.2,0.04,wz-0.2, x0+0.1,FC-0.16,z0+0.1, ledMat,{cast:false});     // interior LED strip
+  const lp=new THREE.PointLight(0xffe6bd,0,7,2); lp.position.set(x0+0.6,6.8,z0+wz/2); lp.name='roomLight'; gCloset.add(lp); })();
 boxAt(WD,  FC, 1.9,  BC+0.15, 0, 2.05,       oak);         // WEST wall, N of bath door
 // (west-wall run S of the bath door removed per owner — clears the closet/bath door corner)
 boxAt(4.95,FC, SD,   11.45,   0, Z_STRIP-SD, oak);         // SOUTH wall, E of bedroom door
+boxAt(7.9,0.04,0.04, 8.4,0.13,2.03, ledMat,{cast:false});       // toe-kick LED wash — north run
+boxAt(4.9,0.04,0.04, 11.45,0.13,6.37, ledMat,{cast:false});     // toe-kick LED wash — south run
 // door-seam reveals on the two long runs (handleless look)
 for(let i=1;i<5;i++) boxAt(0.04,FC-0.1,0.04, 8.4+i*(8.0/5),  0.05, 2.03, oakV,{cast:false}); // north run
 for(let i=1;i<3;i++) boxAt(0.04,FC-0.1,0.04, 11.45+i*(4.95/3),0.05, 6.38, oakV,{cast:false}); // south run
@@ -380,7 +410,7 @@ function setMode(mode){
   scene.background.set(day?0xdfd8cc:0x14110d);
   skyMat.color.set(day?0xffffff:0x2b3a52);   // window sky: bright by day, dusk-blue at night
   coveLights.children.forEach(l=>l.intensity=day?0.12:1.1); coveMat.emissiveIntensity=day?0.5:1.9;
-  downSpots.children.forEach(l=>l.intensity=day?0.22:0.8); dlMat.emissiveIntensity=day?0.45:1.2;
+  downSpots.children.forEach(l=>l.intensity=day?0.22:0.8); dlMat.emissiveIntensity=day?0.45:1.2; ledMat.emissiveIntensity=day?0.5:1.7;
   scene.traverse(o=>{ if(o.name==='lampLight')o.intensity=day?0.2:1.3; if(o.name==='roomLight')o.intensity=day?0.15:1.0; if(o.name==='bulb'&&o.material)o.material.emissiveIntensity=day?0.5:1.4; });
   document.getElementById('btnDay').classList.toggle('active',day);
   document.getElementById('btnNight').classList.toggle('active',!day);
