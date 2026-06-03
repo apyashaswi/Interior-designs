@@ -121,8 +121,10 @@ node server.js
   - **Leg B** = 3.5 ft return wrapping the corner onto the balcony-wall stub (x13–16.5). Handleless oak.
 - **Closet** — **wardrobes wrap all four walls (maximized 2026-06-02)**, full-height to the 8.0 ft ceiling, handleless oak: a full **north-wall run** (x8.4–16.4, 2 ft deep, with 5-door seams), an **east-wall run** south of the 2 ft window (z5–7.85), **one west-wall run** north of the bath door (z2.05–3.95; the S-of-bath-door run was **removed 2026-06-02** to clear the closet/bath door corner), and a **south-wall run** east of the bedroom door (x11.45–16.4). Run depths: `WD=2.0` (N/W), `ED=1.5` (E), `SD=1.6` (S). The **dressing island was removed 2026-06-02** (owner) — floor kept clear.
 - **Sliding mirror door (closet, added 2026-06-02)** — a full-length (y0.4–7.0) framed **mirror panel** on a brass head+floor track in front of the east-wall window; shown **closed** (covering the 2 ft window, z2.85–5.15) and **slides south** along the track (z3–7.85) to tuck into/behind the east wardrobe and reveal the window. Static for now — a candidate for the same open/close animation as the bi-fold door.
-- **Bath** — vanity (x0.3, north wall), WC (x1.0), glass shower enclosure in the **NE corner** (x5.25–8.25, z0–3.2).
+- **Bath** — vanity (x0.3, north wall), WC (x1.0), glass shower enclosure in the **NE corner** (x5.25–8.25, z0–3.2). **Fittings (Stage 2, 2026-06-02):** tiled splash, framed vanity mirror, brass tap + spout, towel bar + towel, brass rain shower arm + head.
+- **Closet interior depth (Stage 2, 2026-06-02):** the east-wall run S of the window is now an **open display wardrobe** — back/side/top carcass, a hanging rail with garments (left bay), three shelves with folded stacks (right bay), a bottom drawer bank, and an **interior LED strip** + warm `roomLight`. Closed runs get a **toe-kick LED wash** (`ledMat` strips at y0.13). `ledMat` is emissive and driven by `setMode` (day 0.5 / night 1.7).
 - **Balcony** — 2 outdoor lounge chairs, coffee table, planter, glass railing following the angled corner.
+- **Soft furnishings (Stage 2, 2026-06-02):** a **sheer curtain** (`sheer` material, semi-transparent) + brass rod over the big east window; a **floor plant** in the bedroom corner near the balcony. `sheer` is transparent (skipped by the walk collider).
 
 ---
 
