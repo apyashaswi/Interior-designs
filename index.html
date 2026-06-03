@@ -132,10 +132,21 @@ const std = (color,o={}) => new THREE.MeshStandardMaterial({ color, roughness:o.
 function box(w,h,d,x,y,z,mat,o={}){ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); m.castShadow=o.cast??true; m.receiveShadow=o.recv??true; TARGET.add(m); return m; }
 function boxAt(w,h,d,x0,y0,z0,mat,o={}){ return box(w,h,d,x0+w/2,y0+h/2,z0+d/2,mat,o); }
 
+// ---- procedural canvas textures (no external files → self-contained on GitHub Pages) ----
+function cTex(size, draw, rep){ const c=document.createElement('canvas'); c.width=c.height=size; const g=c.getContext('2d'); draw(g,size); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; if(rep) t.repeat.set(rep[0],rep[1]); return t; }
+function woodTex(base,dark,rep){ return cTex(256,(g,s)=>{ g.fillStyle=base; g.fillRect(0,0,s,s);
+  for(let i=0;i<70;i++){ const x=Math.random()*s; g.strokeStyle=dark; g.globalAlpha=0.04+Math.random()*0.10; g.lineWidth=0.5+Math.random()*2; g.beginPath(); for(let y=0;y<=s;y+=8) g.lineTo(x+Math.sin(y*0.03+i)*3+Math.random()*1.5, y); g.stroke(); }
+  g.globalAlpha=1; }, rep); }
+function stoneTex(base,rep){ return cTex(256,(g,s)=>{ g.fillStyle=base; g.fillRect(0,0,s,s);
+  for(let i=0;i<26;i++){ g.strokeStyle=i%2?'rgba(255,255,255,0.35)':'rgba(150,143,128,0.30)'; g.lineWidth=0.6+Math.random()*1.4; let x=Math.random()*s,y=Math.random()*s; g.beginPath(); g.moveTo(x,y); for(let k=0;k<5;k++){ x+=(Math.random()-0.5)*90; y+=(Math.random()-0.5)*90; g.lineTo(x,y);} g.stroke(); }
+  }, rep); }
+function linenTex(base,thread,rep){ return cTex(128,(g,s)=>{ g.fillStyle=base; g.fillRect(0,0,s,s); g.strokeStyle=thread; g.globalAlpha=0.5; g.lineWidth=1; for(let i=0;i<s;i+=3){ g.beginPath(); g.moveTo(i,0); g.lineTo(i,s); g.stroke(); g.beginPath(); g.moveTo(0,i); g.lineTo(s,i); g.stroke(); } g.globalAlpha=1; }, rep); }
+
 const WALL = std(C.wall,{r:0.95}); WALL.transparent=true; WALL.opacity=1;
-const oak  = std(C.oak,{r:0.5,m:0.05});
-const oakV = std(C.oakDark,{r:0.55});
-const linen= std(C.linen,{r:1});
+const floorMat = std(C.floor,{r:0.5,m:0.04}); floorMat.map=woodTex('#c9a16b','#8a6638',[6,8]); floorMat.color.set(0xffffff);
+const oak  = std(C.oak,{r:0.5,m:0.05}); oak.map=woodTex('#c69a6b','#8a6234',[1,2]); oak.color.set(0xffffff);
+const oakV = std(C.oakDark,{r:0.55}); oakV.map=woodTex('#9c6f43','#5e421f',[1,2]); oakV.color.set(0xffffff);
+const linen= std(C.linen,{r:1}); linen.map=linenTex('#d8cdbb','#c2b69e',[3,3]); linen.color.set(0xffffff);
 const brass= std(C.brass,{r:0.4,m:0.8});
 const glassMat = new THREE.MeshPhysicalMaterial({ color:C.glass, transmission:0.9, transparent:true, opacity:0.32, roughness:0.05, metalness:0, ior:1.4 });
 // brighter glazing for windows + balcony door (reads as daylit glass over the sky backdrop)
@@ -144,7 +155,7 @@ const winGlass = new THREE.MeshPhysicalMaterial({ color:0xdcecf8, roughness:0.08
 const skyTex = (()=>{ const c=document.createElement('canvas'); c.width=4; c.height=256; const g=c.getContext('2d'); const grd=g.createLinearGradient(0,0,0,256); grd.addColorStop(0,'#a9d0ef'); grd.addColorStop(0.55,'#d4e7f6'); grd.addColorStop(1,'#eef2ea'); g.fillStyle=grd; g.fillRect(0,0,4,256); const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; })();
 const skyMat = new THREE.MeshBasicMaterial({ map:skyTex, side:THREE.DoubleSide });
 function skyPanel(w,h,x,y,z,ry=0){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h), skyMat); m.position.set(x,y,z); m.rotation.y=ry; m.castShadow=false; m.receiveShadow=false; scene.add(m); return m; }
-const stone= std(C.stone,{r:0.6});
+const stone= std(C.stone,{r:0.55}); stone.map=stoneTex('#d7d2c8',[2,2]); stone.color.set(0xffffff);
 const walls=[];
 function wall(x0,z0,x1,z1,h=FC,t=0.35){ const cx=(x0+x1)/2, cz=(z0+z1)/2, w=Math.abs(x1-x0)||t, d=Math.abs(z1-z0)||t; const m=box(w,h,d,cx,h/2,cz,WALL); walls.push(m); return m; }
 
@@ -152,7 +163,7 @@ function wall(x0,z0,x1,z1,h=FC,t=0.35){ const cx=(x0+x1)/2, cz=(z0+z1)/2, w=Math
 //  FLOORS
 // ===========================================================================
 TARGET = gShell;
-boxAt(W,0.06,Z_BED,0,0,0, std(C.floor,{r:0.55,m:0.05}), {cast:false});
+boxAt(W,0.06,Z_BED,0,0,0, floorMat, {cast:false});
 for(let z=0; z<=Z_BED; z+=1) boxAt(W,0.065,0.02,0,0.02,z, std(0xb78f5d,{r:0.6}), {cast:false,recv:false});
 // stone floor across bath + closet strip (x0..W, z0..8)
 boxAt(W,0.04,Z_STRIP,0,0.07,0, std(C.tile,{r:0.5}), {cast:false});
@@ -300,32 +311,34 @@ for(let i=1;i<3;i++) boxAt(0.04,FC-0.1,0.04, 11.45+i*(4.95/3),0.05, 6.38, oakV,{
 // sliding full-length MIRROR DOOR in front of the closet window — slides S on a track,
 // tucking into the east wardrobe pocket to reveal the window; shown here closed (over window).
 const mirror = std(0xccd8de,{m:0.98,r:0.04,envMapIntensity:1.6});
-box(0.06,6.6,2.30, W-0.20,3.7,4.0,  mirror,{cast:false});                 // mirror panel (z2.85..5.15, covers 2 ft window)
-box(0.08,0.10,2.42, W-0.20,7.0,4.0, brass,{cast:false});                 // panel top rail
-box(0.08,0.10,2.42, W-0.20,0.4,4.0, brass,{cast:false});                 // panel bottom rail
-box(0.08,6.6,0.10, W-0.20,3.7,2.85, brass,{cast:false});                 // stile (N edge)
-box(0.08,6.6,0.10, W-0.20,3.7,5.15, brass,{cast:false});                 // stile (S edge)
-box(0.12,0.12,4.85, W-0.15,7.2,5.425, brass,{cast:false});               // head track (z3..7.85 — slide path S into wardrobe)
-box(0.12,0.06,4.85, W-0.15,0.18,5.425, brass,{cast:false});              // floor guide track
+box(0.12,0.12,4.85, W-0.15,7.2,5.425, brass,{cast:false});               // head track (z3..7.85 — slide path S, stays fixed)
+box(0.12,0.06,4.85, W-0.15,0.18,5.425, brass,{cast:false});              // floor guide track (fixed)
+const mirrorGrp=new THREE.Group(); mirrorGrp.userData.noCollide=true; gCloset.add(mirrorGrp);
+[ [0.06,6.6,2.30, W-0.20,3.7,4.0, mirror],                               // mirror panel (covers 2 ft window)
+  [0.08,0.10,2.42, W-0.20,7.0,4.0, brass],                               // top rail
+  [0.08,0.10,2.42, W-0.20,0.4,4.0, brass],                               // bottom rail
+  [0.08,6.6,0.10, W-0.20,3.7,2.85, brass],                              // stile N
+  [0.08,6.6,0.10, W-0.20,3.7,5.15, brass] ].forEach(d=>{                // stile S
+    const m=new THREE.Mesh(new THREE.BoxGeometry(d[0],d[1],d[2]), d[6]); m.position.set(d[3],d[4],d[5]); m.castShadow=false; mirrorGrp.add(m); });
+function setMirror(t){ mirrorGrp.position.z = t*2.6; }                    // slides S to reveal the window
 const cl=new THREE.PointLight(0xfff0d8,0,12,2); cl.position.set(12.4,6.5,4); cl.name='roomLight'; scene.add(cl);
 
 // ===========================================================================
 //  BALCONY / SIT-OUT  (z24..31.75, angled corner)
 // ===========================================================================
 TARGET = gBalc;
-// convertible bi-fold glass door (x3..13 = 10 ft) at z=24
-const opX0=3.0, opX1=13.0, nLeaf=6, leafW=(opX1-opX0)/nLeaf, doorH=7.7;
-boxAt(opX1-opX0,0.10,0.14, opX0,0,    Z_BED-0.06, brass,{cast:false,recv:false});
-boxAt(opX1-opX0,0.12,0.14, opX0,doorH, Z_BED-0.06, brass,{cast:false});
-for(let i=0;i<4;i++){ const x0=opX0+i*leafW;
-  boxAt(leafW-0.07,doorH,0.07, x0,0,Z_BED-0.05, winGlass,{cast:false,recv:false});
-  boxAt(0.07,doorH,0.12, x0,0,Z_BED-0.06, brass,{cast:false});
-}
-boxAt(0.10,doorH,0.12, opX0+4*leafW,0,Z_BED-0.06, brass,{cast:false});
-const fold=new THREE.Group(); fold.position.set(opX1,0,Z_BED-0.1);
-for(let i=0;i<2;i++){ const leaf=new THREE.Mesh(new THREE.BoxGeometry(leafW-0.07,doorH,0.07), winGlass); leaf.castShadow=false; leaf.position.set(-0.15-i*0.3,doorH/2,-(0.2+i*leafW*0.8)); leaf.rotation.y=Math.PI*0.46; fold.add(leaf); const st=new THREE.Mesh(new THREE.BoxGeometry(0.07,doorH,0.12), brass); st.position.copy(leaf.position); st.rotation.y=leaf.rotation.y; fold.add(st); }
-gBalc.add(fold);
-box(0.1,0.7,0.12, opX0+4*leafW-0.25,3.4,Z_BED-0.02, brass,{cast:false});
+// convertible bi-fold glass door (x3..13 = 10 ft) at z=24 — AUTO-FOLDS open as you approach
+const opX0=3.0, opX1=13.0, doorH=7.7, Ld=(opX1-opX0)/4;       // 4 leaves of 2.5 ft, fold toward x13
+boxAt(opX1-opX0,0.10,0.14, opX0,0,    Z_BED-0.06, brass,{cast:false,recv:false});   // bottom track
+boxAt(opX1-opX0,0.12,0.14, opX0,doorH, Z_BED-0.06, brass,{cast:false});             // top track
+const doorGrp=new THREE.Group(); doorGrp.position.set(opX1,0,Z_BED-0.06); doorGrp.userData.noCollide=true; gBalc.add(doorGrp);
+const hinges=[];
+(function(){ let parent=doorGrp; for(let i=0;i<4;i++){ const p=new THREE.Group(); parent.add(p);
+    const leaf=new THREE.Mesh(new THREE.BoxGeometry(Ld-0.06,doorH,0.06), winGlass); leaf.castShadow=false; leaf.position.set(-Ld/2,doorH/2,0); p.add(leaf);
+    const stile=new THREE.Mesh(new THREE.BoxGeometry(0.07,doorH,0.10), brass); stile.position.set(-Ld,doorH/2,0); p.add(stile);
+    const next=new THREE.Group(); next.position.set(-Ld,0,0); p.add(next);
+    hinges.push(p); parent=next; } })();
+function setBalcony(t){ const f=t*Math.PI*0.5; hinges[0].rotation.y=f; hinges[1].rotation.y=-2*f; hinges[2].rotation.y=2*f; hinges[3].rotation.y=-2*f; }
 [3.3,12.7].forEach(x=>{ const c=new THREE.Mesh(new THREE.BoxGeometry(1.4,7.6,0.18), std(0xe6ddcc,{r:1})); c.position.set(x,3.9,Z_BED-0.45); c.castShadow=true; gBalc.add(c); });
 // railing (top rail + glass) along outer edges incl. angled segment
 function railing(x0,z0,x1,z1){ const cx=(x0+x1)/2, cz=(z0+z1)/2, len=Math.hypot(x1-x0,z1-z0), ang=Math.atan2(x1-x0,z1-z0); const g=new THREE.Group(); const glass=new THREE.Mesh(new THREE.BoxGeometry(0.06,3.0,len), glassMat); glass.position.set(0,1.6,0); g.add(glass); const rail=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,len), brass); rail.position.set(0,3.2,0); g.add(rail); g.position.set(cx,0,cz); g.rotation.y=ang; gBalc.add(g); }
@@ -511,6 +524,7 @@ const clock = new THREE.Clock();
 const colliders=[];
 (function buildColliders(){ const bb=new THREE.Box3(), sz=new THREE.Vector3();
   scene.traverse(o=>{ if(!o.isMesh) return; const m=o.material;
+    for(let p=o;p;p=p.parent){ if(p.userData && p.userData.noCollide) return; }   // skip moving doors/mirror
     if(m && m.transparent && m.opacity<0.9) return;          // skip glazing
     bb.setFromObject(o); bb.getSize(sz);
     if(sz.y<0.6 || sz.x>20 || sz.z>34) return;               // skip floors / rugs / flat trims
@@ -520,7 +534,7 @@ const colliders=[];
 const PR=0.7;                                                // body radius (ft)
 function blocked(x,z){ for(const c of colliders){ if(x>c.x0-PR && x<c.x1+PR && z>c.z0-PR && z<c.z1+PR) return true; } return false; }
 
-let velF=0, velR=0, bob=0;                                   // smoothed velocity + head-bob phase
+let velF=0, velR=0, bob=0, balcOpen=0, mirOpen=0;            // smoothed velocity + head-bob + door open states
 function setView(v){   // 'orbit' | 'walk' | 'plan'
   walk = (v==='walk');
   $('plan2d').style.display   = v==='plan' ? 'flex' : 'none';
@@ -566,6 +580,10 @@ const MAXSPD=5.5;                                            // walking pace (ft
       camera.position.y = EYE + Math.sin(bob)*0.05*Math.min(1,spd/2.5);
     } else { camera.position.y = EYE; }
   } else { controls.update(); }
+  // auto doors — fold/slide open as you get close (in walk or orbit)
+  { const cx=camera.position.x, cz=camera.position.z;
+    balcOpen += (((Math.hypot(cx-8, cz-24)<6.5)?1:0)-balcOpen)*Math.min(1,4*dt); setBalcony(balcOpen);
+    mirOpen  += (((Math.hypot(cx-14,cz-4 )<5.0)?1:0)-mirOpen )*Math.min(1,4*dt); setMirror(mirOpen); }
   renderer.render(scene,camera);
 })();
 </script>
