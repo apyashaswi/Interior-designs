@@ -336,29 +336,47 @@ TARGET = gCloset;
 box(0.10,4.0,2.0, W-0.05,4.5,4.0, winGlass,{cast:false,recv:false});
 boxAt(0.16,0.12,2.2, W-0.16,2.5,2.9, brass,{cast:false});
 boxAt(0.16,0.12,2.2, W-0.16,6.5,2.9, brass,{cast:false});
-// --- WARDROBES (full-height to FC, handleless oak) lining every wall ---
-const WD=2.0, ED=1.5, SD=1.6;                              // run depths (north/west, east, south)
-boxAt(8.0, FC, WD,   8.4,     0, 0.05,       oak);         // NORTH wall run  (x8.4..16.4)
-// EAST wall, S of window — OPEN display wardrobe (rail + garments + shelves + drawers + LED)
-(function(){ const x0=W-ED, z0=5.05, wz=2.8, gC=[0x6b6f5a,0x8a8175,0x3f4a55,0xb9a98c,0x9c6f43,0x55606b];
-  boxAt(0.10,FC,wz, W-0.10,0,z0, oak);                                       // back panel (against E wall)
-  boxAt(ED,FC,0.06, x0,0,z0, oak); boxAt(ED,FC,0.06, x0,0,z0+wz-0.06, oak);  // side panels
-  boxAt(ED,0.08,wz, x0,FC-0.08,z0, oak);                                     // top
-  boxAt(ED,0.55,wz, x0,0,z0, oakV);                                          // drawer bank (bottom)
-  boxAt(0.05,0.05,1.25, x0+0.45,6.55,z0+0.1, brass,{cast:false});            // hanging rail (left bay)
-  for(let k=0;k<6;k++) boxAt(0.55,2.35,0.14, x0+0.12,4.2,z0+0.18+k*0.2, std(gC[k],{r:1}));   // garments
-  for(let s=0;s<3;s++){ const y=4.7+s*1.0; boxAt(ED-0.1,0.05,1.2, x0+0.05,y,z0+1.55, oak);   // shelves (right bay)
-    boxAt(0.7,0.35,0.5, x0+0.35,y+0.05,z0+1.7, std(gC[(s+2)%6],{r:1})); }                     // folded stacks
-  boxAt(ED-0.2,0.04,wz-0.2, x0+0.1,FC-0.16,z0+0.1, ledMat,{cast:false});     // interior LED strip
-  const lp=new THREE.PointLight(0xffe6bd,0,7,2); lp.position.set(x0+0.6,6.8,z0+wz/2); lp.name='roomLight'; gCloset.add(lp); })();
-boxAt(WD,  FC, 1.9,  BC+0.15, 0, 2.05,       oak);         // WEST wall, N of bath door
-// (west-wall run S of the bath door removed per owner — clears the closet/bath door corner)
-boxAt(4.95,FC, SD,   11.45,   0, Z_STRIP-SD, oak);         // SOUTH wall, E of bedroom door
-boxAt(7.9,0.04,0.04, 8.4,0.13,2.03, ledMat,{cast:false});       // toe-kick LED wash — north run
-boxAt(4.9,0.04,0.04, 11.45,0.13,6.37, ledMat,{cast:false});     // toe-kick LED wash — south run
-// door-seam reveals on the two long runs (handleless look)
-for(let i=1;i<5;i++) boxAt(0.04,FC-0.1,0.04, 8.4+i*(8.0/5),  0.05, 2.03, oakV,{cast:false}); // north run
-for(let i=1;i<3;i++) boxAt(0.04,FC-0.1,0.04, 11.45+i*(4.95/3),0.05, 6.38, oakV,{cast:false}); // south run
+// --- WARDROBES: detailed cupboards with sliding TRANSLUCENT doors (all 4 walls) ---
+const frost = new THREE.MeshPhysicalMaterial({ color:0xdce5e6, roughness:0.45, metalness:0, transparent:true, opacity:0.34, transmission:0.3, side:THREE.DoubleSide });
+const gCol=[0x6b6f5a,0x8a8175,0x3f4a55,0xb9a98c,0x9c6f43,0x55606b,0x707b6a];
+// front = which face carries the sliding doors: 'S'(+z) 'N'(-z) 'E'(+x) 'W'(-x); back sits on the opposite wall
+function cupboard(x0,x1,z0,z1,front){
+  const horiz=(front==='S'||front==='N');
+  const Wlen=horiz?(x1-x0):(z1-z0), Dp=horiz?(z1-z0):(x1-x0);
+  const g=new THREE.Group();
+  if(front==='S'){ g.position.set(x0,0,z0); }
+  else if(front==='N'){ g.position.set(x1,0,z1); g.rotation.y=Math.PI; }
+  else if(front==='E'){ g.position.set(x0,0,z1); g.rotation.y=Math.PI/2; }
+  else { g.position.set(x1,0,z0); g.rotation.y=-Math.PI/2; }
+  gCloset.add(g);
+  const t=0.06, lm=(w,h,d,x,y,z,mat)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(x,y,z); m.castShadow=false; m.receiveShadow=true; g.add(m); return m; };
+  lm(Wlen,FC,t, Wlen/2,FC/2,t/2, oak);                                   // back
+  lm(t,FC,Dp, t/2,FC/2,Dp/2, oak); lm(t,FC,Dp, Wlen-t/2,FC/2,Dp/2, oak); // sides
+  lm(Wlen,t,Dp, Wlen/2,FC-t/2,Dp/2, oak);                                // top
+  lm(Wlen,0.55,Dp-0.04, Wlen/2,0.275,Dp/2, oakV);                        // drawer bank
+  const mods=Math.max(2,Math.round(Wlen/2.5)), mw=Wlen/mods;
+  for(let i=1;i<mods;i++) lm(t,FC,Dp, i*mw,FC/2,Dp/2, oak);              // dividers
+  for(let i=0;i<mods;i++){ const cx=(i+0.5)*mw;
+    if(i%2===0){ lm(mw-0.2,0.05,0.05, cx,6.2,Dp/2, brass);              // hanging rail
+      const n=4, span=mw-0.3; for(let k=0;k<n;k++) lm(span/n*0.85,2.2,0.13, cx-span/2+span/(n-1)*k, 3.95, Dp/2, std(gCol[(i+k)%gCol.length],{r:1})); }
+    else { for(let s=0;s<4;s++){ const y=1.1+s*1.5; lm(mw-0.16,0.05,Dp-0.12, cx,y,Dp/2, oak);
+        if((s+i)%2===0) lm(mw-0.5,0.32,Dp-0.4, cx,y+0.2,Dp/2, std(gCol[(i+s)%gCol.length],{r:1})); } }
+  }
+  lm(Wlen-0.3,0.04,Dp-0.3, Wlen/2,FC-0.12,Dp/2, ledMat);                 // interior LED strip
+  const lp=new THREE.PointLight(0xffe6bd,0,Math.max(Wlen,5),2); lp.position.set(Wlen/2,6.5,Dp/2); lp.name='roomLight'; g.add(lp);
+  lm(Wlen,0.06,0.06, Wlen/2,FC-0.05,Dp-0.05, brass);                     // top track
+  lm(Wlen,0.05,0.06, Wlen/2,0.05,Dp-0.05, brass);                        // bottom track
+  const pw=Wlen*0.52;
+  lm(pw,FC-0.2,0.03, pw/2, FC/2, Dp-0.03, frost);                        // sliding panel A (outer track)
+  lm(pw,FC-0.2,0.03, Wlen-pw/2, FC/2, Dp-0.10, frost);                   // sliding panel B (inner track)
+  lm(0.05,1.1,0.05, pw-0.06, FC/2, Dp-0.01, brass);                      // handle A
+  lm(0.05,1.1,0.05, Wlen-pw+0.06, FC/2, Dp-0.08, brass);                 // handle B
+  return g;
+}
+cupboard(8.4,16.4, 0.05,2.05, 'S');    // NORTH wall run
+cupboard(11.45,16.4, 6.4,8.0, 'N');    // SOUTH wall run (E of bedroom door)
+cupboard(8.4,10.4, 2.05,3.95, 'E');    // WEST wall run (N of bath door)
+cupboard(15.0,16.5, 5.05,7.85, 'W');   // EAST wall run (S of window)
 // (island removed per owner — closet floor kept clear)
 // sliding full-length MIRROR DOOR in front of the closet window — slides S on a track,
 // tucking into the east wardrobe pocket to reveal the window; shown here closed (over window).
