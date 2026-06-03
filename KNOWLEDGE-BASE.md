@@ -90,7 +90,7 @@ node server.js
 ```
 
 ### Dimensions
-- **Bedroom:** **16'6"** (X) × 16'0" (Z, z8–24). Ceiling 10 ft with **1.5 ft false-ceiling cove** (finished 8.5 ft).
+- **Bedroom:** **16'6"** (X) × 16'0" (Z, z8–24). Structural slab 10 ft; **finished/false ceiling 8.0 ft** (`FC=8.0`, corrected 2026-06-02 from 8.5) with a perimeter cove. Window headers + the tall bedroom window were retuned to sit under the 8.0 ceiling.
 - **Bath:** ~8'3"×8' (x0–8.25, z0–8). Reached **through the closet** (no direct bedroom→bath door). Shower in NE corner (x5.25–8.25, z0–3.2).
 - **Walk-in closet:** ~8'3"×8' (x8.25–16.5, z0–8), against the **east exterior wall**.
 - **Balcony / sit-out:** ≈16'6"×7'9" (z24–31.75) with an **angled outer corner**.
@@ -119,7 +119,7 @@ node server.js
 - **L-shaped wardrobe** (balcony end of the east wall):
   - **Leg A** = 4 ft full-height along the east wall (z20–24).
   - **Leg B** = 3.5 ft return wrapping the corner onto the balcony-wall stub (x13–16.5). Handleless oak.
-- **Closet** — **wardrobes wrap all four walls (maximized 2026-06-02)**, full-height to the 8.5 ft ceiling, handleless oak: a full **north-wall run** (x8.4–16.4, 2 ft deep, with 5-door seams), an **east-wall run** south of the 2 ft window (z5–7.85), **one west-wall run** north of the bath door (z2.05–3.95; the S-of-bath-door run was **removed 2026-06-02** to clear the closet/bath door corner), and a **south-wall run** east of the bedroom door (x11.45–16.4). Run depths: `WD=2.0` (N/W), `ED=1.5` (E), `SD=1.6` (S). The **dressing island was removed 2026-06-02** (owner) — floor kept clear.
+- **Closet** — **wardrobes wrap all four walls (maximized 2026-06-02)**, full-height to the 8.0 ft ceiling, handleless oak: a full **north-wall run** (x8.4–16.4, 2 ft deep, with 5-door seams), an **east-wall run** south of the 2 ft window (z5–7.85), **one west-wall run** north of the bath door (z2.05–3.95; the S-of-bath-door run was **removed 2026-06-02** to clear the closet/bath door corner), and a **south-wall run** east of the bedroom door (x11.45–16.4). Run depths: `WD=2.0` (N/W), `ED=1.5` (E), `SD=1.6` (S). The **dressing island was removed 2026-06-02** (owner) — floor kept clear.
 - **Sliding mirror door (closet, added 2026-06-02)** — a full-length (y0.4–7.0) framed **mirror panel** on a brass head+floor track in front of the east-wall window; shown **closed** (covering the 2 ft window, z2.85–5.15) and **slides south** along the track (z3–7.85) to tuck into/behind the east wardrobe and reveal the window. Static for now — a candidate for the same open/close animation as the bi-fold door.
 - **Bath** — vanity (x0.3, north wall), WC (x1.0), glass shower enclosure in the **NE corner** (x5.25–8.25, z0–3.2).
 - **Balcony** — 2 outdoor lounge chairs, coffee table, planter, glass railing following the angled corner.
@@ -139,7 +139,7 @@ node server.js
 | Metal accents | Brushed brass | `0xb08d57` |
 | Balcony | Timber deck | `0xb5a382` |
 
-Lighting is **layered**: recessed downlights + perimeter **cove LED** (the 1.5 ft drop) + bedside **pendants** + room lights. Toggle **Night** to see the cove glow.
+Lighting is **layered** (redesigned 2026-06-02 for the 8.0 ft false ceiling): a **recessed-downlight grid** with visible fixtures (`downlight(x,z,r)` adds a disc+ring in `ceilingGroup` and a `SpotLight` in `downSpots`) — bedroom 3×3, bath ×2, closet ×2 — plus perimeter **cove LED**, bedside **pendants**, a **bath vanity LED bar**, and **balcony sconces**. `setMode()` drives them all (downlights/cove/`dlMat` emissive + any `roomLight`/`lampLight`). Walk-through auto-shows the lit ceiling. Toggle **Night** to see it best.
 
 ---
 
