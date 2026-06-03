@@ -353,14 +353,14 @@ function cupboard(x0,x1,z0,z1,front){
   lm(Wlen,FC,t, Wlen/2,FC/2,t/2, oak);                                   // back
   lm(t,FC,Dp, t/2,FC/2,Dp/2, oak); lm(t,FC,Dp, Wlen-t/2,FC/2,Dp/2, oak); // sides
   lm(Wlen,t,Dp, Wlen/2,FC-t/2,Dp/2, oak);                                // top
-  lm(Wlen,0.55,Dp-0.04, Wlen/2,0.275,Dp/2, oakV);                        // drawer bank
   const mods=Math.max(2,Math.round(Wlen/2.5)), mw=Wlen/mods;
   for(let i=1;i<mods;i++) lm(t,FC,Dp, i*mw,FC/2,Dp/2, oak);              // dividers
-  for(let i=0;i<mods;i++){ const cx=(i+0.5)*mw;
-    if(i%2===0){ lm(mw-0.2,0.05,0.05, cx,6.2,Dp/2, brass);              // hanging rail
-      const n=4, span=mw-0.3; for(let k=0;k<n;k++) lm(span/n*0.85,2.2,0.13, cx-span/2+span/(n-1)*k, 3.95, Dp/2, std(gCol[(i+k)%gCol.length],{r:1})); }
-    else { for(let s=0;s<4;s++){ const y=1.1+s*1.5; lm(mw-0.16,0.05,Dp-0.12, cx,y,Dp/2, oak);
-        if((s+i)%2===0) lm(mw-0.5,0.32,Dp-0.4, cx,y+0.2,Dp/2, std(gCol[(i+s)%gCol.length],{r:1})); } }
+  lm(Wlen-0.1,0.05,Dp-0.08, Wlen/2,7.45,Dp/2, oak);                     // top storage shelf (full run)
+  for(let i=0;i<mods;i++){ const cx=(i+0.5)*mw, span=mw-0.26;
+    const hang=(railY,len)=>{ lm(mw-0.16,0.05,0.05, cx,railY,Dp/2, brass);                       // rail
+      const n=Math.max(3,Math.round(span/0.42)); for(let k=0;k<n;k++) lm(span/n*0.86,len,0.13, cx-span/2+span/(n-1)*k, railY-len/2, Dp/2, std(gCol[(i+k)%gCol.length],{r:1})); };
+    if(i%2===0){ hang(7.05,4.9); }                                       // SINGLE long hang (full-length garments)
+    else { hang(7.05,2.55); lm(mw-0.14,0.05,Dp-0.1, cx,4.05,Dp/2, oak); hang(3.65,2.6); }   // DOUBLE hang (two stories) + mid shelf
   }
   lm(Wlen-0.3,0.04,Dp-0.3, Wlen/2,FC-0.12,Dp/2, ledMat);                 // interior LED strip
   const lp=new THREE.PointLight(0xffe6bd,0,Math.max(Wlen,5),2); lp.position.set(Wlen/2,6.5,Dp/2); lp.name='roomLight'; g.add(lp);
