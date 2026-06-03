@@ -1,10 +1,11 @@
 // Minimal zero-dependency static server for the 3D bedroom.
-// Usage:  node server.js   →   open http://localhost:5173
+// Usage:  node server.js   →   open http://localhost:5180
+// (Port 5180, not 5173, to avoid clashing with the portfolio's Vite dev server.)
 const http = require('http');
 const fs   = require('fs');
 const path = require('path');
 
-const PORT = process.env.PORT || 5173;
+const PORT = process.env.PORT || 5180;
 const ROOT = __dirname;
 const TYPES = {
   '.html':'text/html; charset=utf-8',

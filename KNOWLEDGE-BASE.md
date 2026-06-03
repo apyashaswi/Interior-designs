@@ -26,10 +26,15 @@
 ```bash
 cd "3d-design"
 node server.js
-# open http://localhost:5173
+# open http://localhost:5180
 ```
+> **Port note:** this app serves on **5180** (the default in `server.js`), deliberately *not* 5173 — that's the portfolio website's Vite dev port, and the two clash if both run at once. Override with `PORT=xxxx node server.js` if needed.
 - Zero npm dependencies (uses Three.js via CDN). Node 18+ (tested on v24).
-- **Controls:** `3D View / 2D Floor Plan` toggle (top center) · **Day/Night** · **X-ray walls** · **Show/Hide ceiling** · **Top-down** · **Reset** · **Auto-spin** · mouse drag/scroll/right-drag.
+- **Controls:** `3D View / Walk-through / 2D Floor Plan` toggle (top center) · **Focus room** (Whole suite / Bedroom / Closet / Bath) · **Day/Night** · **X-ray walls** · **Show/Hide ceiling** · **Top-down** · **Reset** · **Auto-spin** · mouse drag/scroll/right-drag.
+- **Walk-through / first-person mode (added 2026-06-02):** `PointerLockControls` — click to lock the pointer, then **WASD / arrow keys** move and the mouse looks, at standing eye height `EYE=5.4` ft. `setView('orbit'|'walk'|'plan')` is the single switchboard. Start pose: standing in the bedroom near the balcony, looking toward the bed.
+  - **Realism pass (2026-06-02):** **collision** — `colliders[]` is auto-built once from every opaque mesh taller than 0.6 ft (walls + furniture); glazing (`opacity<0.9`) is skipped so doorways and the balcony glass door stay passable. `blocked(x,z)` does circle-vs-AABB with body radius `PR=0.7`, resolved per-axis each frame so you **slide along walls** instead of sticking. **Smoothed velocity** (`velF/velR` lerp at 10/s, `MAXSPD=5.5` ft/s) gives weighty accel/decel; **head-bob** modulates eye height while moving; **FOV widens to 68°** in walk mode (52° for orbit). NOTE: colliders are baked at load with walls solid — if you later need Focus-isolated walk-throughs, rebuild them. Shadow map bumped to 4096².
+- **Realistic reflections (added 2026-06-02):** `scene.environment` is a `RoomEnvironment` baked through `PMREMGenerator` — gives glass, brass, and the closet **mirror** real image-based reflections and softer material lighting. If day mode looks too bright, lower `renderer.toneMappingExposure` or the env sigma.
+- **Focus room / zone isolation (added 2026-06-02):** geometry is split into `THREE.Group`s — `gShell` (walls/floors), `gBed`, `gCloset`, `gBath`, `gBalc` — via a module-level `TARGET` that `box()`/`boxAt()` add to (set per build section). `setFocus(z)` toggles group visibility, ghosts the shell walls to 8% opacity when isolating one room (so you can orbit freely), and snaps the camera to a per-zone preset in `FOCUS`. Balcony shows with the bedroom. **When you add geometry, set `TARGET` to the right group first**, or route stray `scene.add(...)` meshes to the group like the bed lamps / balcony pieces do.
 
 ### Files
 - `index.html` — the whole app (Three.js scene **and** the SVG 2D plan). All geometry is plain JS coordinates.
@@ -103,11 +108,12 @@ node server.js
 ## 5. Joinery & furniture (the feature pieces)
 
 - **King bed** — headboard against the **left wall** (opposite the window); faces the big east window. `bedZc=13.5`, 6.5 wide × 6.6 long. (~8 ft of open floor now sits between the bed foot and the window seat, down from ~12 ft at the old 19 ft width.) Fluted upholstered headboard, 2 floating bedside tables + **brass pendant** lights, foot bench, rug, artwork.
-- **Window seat** — **continuous 12 ft** along the east wall (z8–20), 1.83 ft deep, with a **daybed end** (backrest + bolster) at the north end where it meets solid wall. The 10 ft window sits above (z10–20).
+- **Window seat** — **continuous 12 ft** along the east wall (z8–20), 1.83 ft deep, with a **daybed end** (backrest + bolster) at the north end where it meets solid wall. The 10 ft window sits above (z10–20). **Storage below (added 2026-06-02):** the 1.5 ft base is articulated into **6 handleless bays, drawer-over-cabinet** (vertical seams every 2 ft + a horizontal divide reveal at y0.85).
 - **L-shaped wardrobe** (balcony end of the east wall):
   - **Leg A** = 4 ft full-height along the east wall (z20–24).
   - **Leg B** = 3.5 ft return wrapping the corner onto the balcony-wall stub (x13–16.5). Handleless oak.
-- **Closet** — north-wall wardrobe (x8.55–16.2), two east-wall wardrobes flanking the 2 ft window, central island (x10.9) with stone top.
+- **Closet** — **wardrobes wrap all four walls (maximized 2026-06-02)**, full-height to the 8.5 ft ceiling, handleless oak: a full **north-wall run** (x8.4–16.4, 2 ft deep, with 5-door seams), an **east-wall run** south of the 2 ft window (z5–7.85), **one west-wall run** north of the bath door (z2.05–3.95; the S-of-bath-door run was **removed 2026-06-02** to clear the closet/bath door corner), and a **south-wall run** east of the bedroom door (x11.45–16.4). Run depths: `WD=2.0` (N/W), `ED=1.5` (E), `SD=1.6` (S). The **dressing island was removed 2026-06-02** (owner) — floor kept clear.
+- **Sliding mirror door (closet, added 2026-06-02)** — a full-length (y0.4–7.0) framed **mirror panel** on a brass head+floor track in front of the east-wall window; shown **closed** (covering the 2 ft window, z2.85–5.15) and **slides south** along the track (z3–7.85) to tuck into/behind the east wardrobe and reveal the window. Static for now — a candidate for the same open/close animation as the bi-fold door.
 - **Bath** — vanity (x0.3, north wall), WC (x1.0), glass shower enclosure in the **NE corner** (x5.25–8.25, z0–3.2).
 - **Balcony** — 2 outdoor lounge chairs, coffee table, planter, glass railing following the angled corner.
 
