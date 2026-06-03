@@ -62,6 +62,7 @@
   <div class="row"><button id="btnTop">Top-down</button><button id="btnReset">Reset</button></div>
   <div class="row"><button id="btnAuto">Auto-spin</button></div>
   <div class="row"><button id="btnMirror">Open closet mirror</button></div>
+  <div class="row"><button id="btnFx" class="active">Realism FX: on</button></div>
   <div class="legend">
     <div><span class="sw" style="background:#c9a16b"></span>Oak floor</div>
     <div><span class="sw" style="background:#c69a6b"></span>Oak veneer joinery</div>
@@ -87,6 +88,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 // ===========================================================================
 //  UNITS: 1 unit = 1 ft.  Suite  X(0..16.5)  Z(0..31.75)
@@ -159,6 +165,8 @@ function skyPanel(w,h,x,y,z,ry=0){ const m=new THREE.Mesh(new THREE.PlaneGeometr
 const stone= std(C.stone,{r:0.55}); stone.map=stoneTex('#d7d2c8',[2,2]); stone.color.set(0xffffff);
 const ledMat = new THREE.MeshStandardMaterial({color:0xfff0d8, emissive:0xffdca0, emissiveIntensity:1, roughness:1});   // joinery / strip LED
 const sheer  = new THREE.MeshStandardMaterial({color:0xf2ece0, roughness:1, transparent:true, opacity:0.32, side:THREE.DoubleSide});  // curtain sheer
+// reuse each texture as a bump map so wood / stone / linen catch light with surface relief
+[floorMat,oak,oakV,linen,stone].forEach(mt=>{ if(mt.map){ mt.bumpMap=mt.map; mt.bumpScale=0.06; } });
 const walls=[];
 function wall(x0,z0,x1,z1,h=FC,t=0.35){ const cx=(x0+x1)/2, cz=(z0+z1)/2, w=Math.abs(x1-x0)||t, d=Math.abs(z1-z0)||t; const m=box(w,h,d,cx,h/2,cz,WALL); walls.push(m); return m; }
 
@@ -605,7 +613,19 @@ $('walkhint').onclick=()=>{ if(walk) fp.lock(); };
 fp.addEventListener('lock',   ()=>{ $('walkhint').style.display='none'; });
 fp.addEventListener('unlock', ()=>{ if(walk) $('walkhint').style.display='flex'; });
 
-addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+// ---- post-processing: GTAO ambient occlusion + gentle bloom, with a toggle + safe fallback ----
+let composer=null, usePost=true;
+try {
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene,camera));
+  composer.addPass(new GTAOPass(scene,camera, innerWidth, innerHeight));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 0.32, 0.5, 0.82));
+  composer.addPass(new OutputPass());
+} catch(e){ console.warn('post-processing unavailable, falling back:', e); composer=null; usePost=false; }
+if(!composer){ const b=$('btnFx'); b.classList.remove('active'); b.textContent='Realism FX: off'; b.disabled=true; }
+$('btnFx').onclick=e=>{ if(!composer) return; usePost=!usePost; e.target.classList.toggle('active',usePost); e.target.textContent=usePost?'Realism FX: on':'Realism FX: off'; };
+
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); if(composer) composer.setSize(innerWidth,innerHeight); });
 $('loading').style.display='none';
 const MAXSPD=5.5;                                            // walking pace (ft/s)
 (function animate(){ requestAnimationFrame(animate);
@@ -631,7 +651,8 @@ const MAXSPD=5.5;                                            // walking pace (ft
   { const cx=camera.position.x, cz=camera.position.z;
     balcOpen += (((Math.hypot(cx-8, cz-24)<6.5)?1:0)-balcOpen)*Math.min(1,4*dt); setBalcony(balcOpen);
     mirOpen  += (mirrorTarget-mirOpen)*Math.min(1,4*dt); setMirror(mirOpen); }
-  renderer.render(scene,camera);
+  if(usePost && composer){ try{ composer.render(); }catch(err){ console.warn('FX render failed — disabling:',err); usePost=false; const b=$('btnFx'); if(b){b.classList.remove('active'); b.textContent='Realism FX: off';} renderer.render(scene,camera); } }
+  else renderer.render(scene,camera);
 })();
 </script>
 </body>
