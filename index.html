@@ -61,6 +61,7 @@
   <div class="row"><button id="btnXray">X-ray walls</button><button id="btnCeiling">Show ceiling</button></div>
   <div class="row"><button id="btnTop">Top-down</button><button id="btnReset">Reset</button></div>
   <div class="row"><button id="btnAuto">Auto-spin</button></div>
+  <div class="row"><button id="btnMirror">Open closet mirror</button></div>
   <div class="legend">
     <div><span class="sw" style="background:#c9a16b"></span>Oak floor</div>
     <div><span class="sw" style="background:#c69a6b"></span>Oak veneer joinery</div>
@@ -510,6 +511,7 @@ $('foc_closet').onclick=()=>setFocus('closet'); $('foc_bath').onclick=()=>setFoc
 $('btnXray').onclick=e=>{ xray=!xray; applyWalls(); e.target.classList.toggle('active',xray); };
 let ceil=false; $('btnCeiling').onclick=e=>{ ceil=!ceil; ceilingGroup.visible=ceil; coveGroup.visible=ceil; e.target.classList.toggle('active',ceil); e.target.textContent=ceil?'Hide ceiling':'Show ceiling'; };
 let spin=false; $('btnAuto').onclick=e=>{ spin=!spin; controls.autoRotate=spin; controls.autoRotateSpeed=0.7; e.target.classList.toggle('active',spin); };
+$('btnMirror').onclick=e=>{ mirrorTarget = mirrorTarget?0:1; e.target.classList.toggle('active', mirrorTarget===1); e.target.textContent = mirrorTarget ? 'Close closet mirror' : 'Open closet mirror'; };
 $('btnReset').onclick=()=>{ setFocus('all'); };
 $('btnTop').onclick=()=>{ camera.position.set(W/2,44,ZTOT/2+0.01); controls.target.set(W/2,0,ZTOT/2); controls.update(); };
 // ---- View mode: Orbit (3D) · Walk-through (first person) · 2D plan ----
@@ -534,7 +536,7 @@ const colliders=[];
 const PR=0.7;                                                // body radius (ft)
 function blocked(x,z){ for(const c of colliders){ if(x>c.x0-PR && x<c.x1+PR && z>c.z0-PR && z<c.z1+PR) return true; } return false; }
 
-let velF=0, velR=0, bob=0, balcOpen=0, mirOpen=0;            // smoothed velocity + head-bob + door open states
+let velF=0, velR=0, bob=0, balcOpen=0, mirOpen=0, mirrorTarget=0;   // velocity + head-bob + door states (mirror is button-driven)
 function setView(v){   // 'orbit' | 'walk' | 'plan'
   walk = (v==='walk');
   $('plan2d').style.display   = v==='plan' ? 'flex' : 'none';
@@ -580,10 +582,10 @@ const MAXSPD=5.5;                                            // walking pace (ft
       camera.position.y = EYE + Math.sin(bob)*0.05*Math.min(1,spd/2.5);
     } else { camera.position.y = EYE; }
   } else { controls.update(); }
-  // auto doors — fold/slide open as you get close (in walk or orbit)
+  // balcony door auto-folds by proximity; mirror slides via the panel button (mirrorTarget)
   { const cx=camera.position.x, cz=camera.position.z;
     balcOpen += (((Math.hypot(cx-8, cz-24)<6.5)?1:0)-balcOpen)*Math.min(1,4*dt); setBalcony(balcOpen);
-    mirOpen  += (((Math.hypot(cx-14,cz-4 )<5.0)?1:0)-mirOpen )*Math.min(1,4*dt); setMirror(mirOpen); }
+    mirOpen  += (mirrorTarget-mirOpen)*Math.min(1,4*dt); setMirror(mirOpen); }
   renderer.render(scene,camera);
 })();
 </script>
